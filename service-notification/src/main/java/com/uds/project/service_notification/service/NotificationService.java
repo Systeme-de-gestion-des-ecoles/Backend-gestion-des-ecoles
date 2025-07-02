@@ -1,14 +1,14 @@
 package com.uds.project.service_notification.service;
 
-import org.springframework.stereotype.Service;
-
-import com.uds.project.service_notification.entity.Notification;
-import com.uds.project.service_notification.repository.NotificationRepository;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.uds.project.service_notification.entity.Notification;
+import com.uds.project.service_notification.repository.NotificationRepository;
 
 @Service
 public class NotificationService {
@@ -20,6 +20,7 @@ public class NotificationService {
         this.notificationRepository = notificationRepository;
         this.emailService = emailService;
     }
+
     public List<Notification> getNotificationsByUserAndDate(String email, LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
@@ -36,9 +37,13 @@ public class NotificationService {
 
         notification = notificationRepository.save(notification);
 
-        // Envoi en temps réel
-        emailService.envoyerEmail(email, sujet, message);
-        notification.setEnvoye(true);
+        try {
+            emailService.envoyerEmail(email, sujet, message);
+            notification.setEnvoye(true);
+        } catch (Exception e) {
+            // Ici on log l'erreur dans EmailService, pas besoin de gérer ici
+        }
+
         notificationRepository.save(notification);
 
         return notification;
