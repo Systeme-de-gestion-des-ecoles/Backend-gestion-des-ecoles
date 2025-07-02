@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+    <h1>Notifications utilisateur</h1>
+    <!-- id="notifications-list" : identifiant utilisé en JavaScript pour y insérer des notifications dynamiquement.-->
+    <ul id="notifications-list"></ul>
+
+    <script>
+        const userId = "user123";
+        //Crée une connexion WebSocket vers ton serveur Spring Boot (/ws est défini dans WebSocketConfig). Le client STOMP va être utilisé pour s’abonner à un topic.
+        const socket = new SockJS("http://localhost:9001/ws");
+        const stompClient = Stomp.over(socket);
+
+        //  connect() : ouvre une connexion STOMP. Une fois connecté, on s’abonne à un topic spécifique à l’utilisateur :/topic/notifications/user123 Ce topic est utilisé par le backend pour envoyer les notifications en temps réel à cet utilisateur.
+        stompClient.connect({}, function () {
+            stompClient.subscribe("/topic/notifications/" + userId, function (message) {
+                //Le message reçu est au format JSON, on le convertit en objet JS.
+                const notif = JSON.parse(message.body);
+                //On crée un nouvel élément <li> (ligne de la liste).On y affiche : l’heure, le titre, le contenu de la notification.On ajoute cet élément à la liste HTML (<ul id="notifications-list">).
+                const li = document.createElement("li");
+                li.textContent = `[${new Date(notif.timestamp).toLocaleTimeString()}] ${notif.title} - ${notif.content}`;
+                document.getElementById("notifications-list").appendChild(li);
+            });
+        });
+    </script>
+</body>
+</html>
