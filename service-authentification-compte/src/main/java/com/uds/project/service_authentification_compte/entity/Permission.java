@@ -9,24 +9,20 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @Entity
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "roles")
-public class Role {
+@Table(name = "permissions")
+public class Permission {
     
     @Id
     @GeneratedValue
@@ -38,12 +34,13 @@ public class Role {
     @Column(nullable = false)
     private String description;
     
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "role_permissions",
-        joinColumns = @JoinColumn(name = "role_id"),
-        inverseJoinColumns = @JoinColumn(name = "permission_id")
-    )
+    @Column(nullable = false)
+    private String resource;
+    
+    @Column(nullable = false)
+    private String action;
+    
+    @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
     @Builder.Default
-    private Set<Permission> permissions = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 } 
