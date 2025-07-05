@@ -1,197 +1,63 @@
 package com.uds.project.service_authentification_compte.controller;
 
+import java.util.UUID;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.uds.project.service_authentification_compte.configuration.JwtUtils;
-import com.uds.project.service_authentification_compte.entity.RegisterDto;
-import com.uds.project.service_authentification_compte.entity.Role;
-import com.uds.project.service_authentification_compte.entity.User;
-import com.uds.project.service_authentification_compte.exception.UserNotFoundException;
-import com.uds.project.service_authentification_compte.repository.RoleRepository;
-import com.uds.project.service_authentification_compte.repository.UserRepository;
+import com.uds.project.service_authentification_compte.dto.LoginRequest;
+import com.uds.project.service_authentification_compte.dto.RegisterRequest;
+import com.uds.project.service_authentification_compte.dto.TokenResponse;
+import com.uds.project.service_authentification_compte.service.AuthService;
 
-import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Slf4j
 public class AuthController {
-    private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtUtils jwtUtils;
-    private final AuthenticationManager authenticationManager;
-
-@PostMapping("/user/register")
-@PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<?> register(@RequestBody RegisterDto registerDto) {
-    if (userRepository.findByUsername(registerDto.getUsername()) != null) {
-        return ResponseEntity.badRequest().body("Username already exists");
+    
+    private final AuthService authService;
+    
+    @PostMapping("/register")
+    public ResponseEntity<TokenResponse> register(@Valid @RequestBody RegisterRequest request) {
+        TokenResponse user = authService.register(request);
+        return ResponseEntity.ok(user);
     }
-
-    String encodedPassword = passwordEncoder.encode(registerDto.getPassword());
-
-    User user = new User();
-    user.setUsername(registerDto.getUsername());
-    user.setPassword(encodedPassword);
-
-    Set<Role> roles = new HashSet<>();
-    for (String roleName : registerDto.getRoleNames()) {
-        Role role = roleRepository.findByName(roleName)
-            .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-        roles.add(role);
+    
+    @PostMapping("/login")
+    public ResponseEntity<TokenResponse> login(@Valid @RequestBody LoginRequest request) {
+        TokenResponse tokenResponse = authService.login(request);
+        return ResponseEntity.ok(tokenResponse);
     }
-    user.setRoles(roles);
-
-    User savedUser = userRepository.save(user);
-
-    Set<String> roleNames = savedUser.getRoles()
-        .stream()
-        .map(Role::getName)
-        .collect(Collectors.toSet());
-
-    Map<String, Object> response = new HashMap<>();
-    response.put("username", savedUser.getUsername());
-    response.put("password", encodedPassword); // ← mot de passe chiffré
-    response.put("roles", roleNames);
-
-    return ResponseEntity.ok(response);
-}
-
-@PostMapping("/user/login")
-public ResponseEntity<?> login(@RequestBody User user) {
-    if (user.getUsername() == null || user.getPassword() == null) {
-    return ResponseEntity.badRequest().body("Username and password are required.");
-}
-
-        try {
-
-            // Authentifie l'utilisateur
-            Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
-            );
-
-            // Si authentification réussie, génère le token
-            if (authentication.isAuthenticated()) {
-                Map<String, Object> authData = new HashMap<>();
-                authData.put("token", jwtUtils.generateToken(user.getUsername()));
-                authData.put("type", "Bearer");
-                return ResponseEntity.ok(authData);
-            }
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Username or Password");
-        } catch (AuthenticationException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Username or Password");
-        }
+    
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        authService.logout();
+        return ResponseEntity.ok().build();
     }
-    @GetMapping("/users")
-@PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<List<RegisterDto>> getAllPersonnes() {
-    List<User> users = userRepository.findAll();
-
-    List<RegisterDto> userDtos = users.stream()
-        .map(user -> {
-            Set<String> roleNames = user.getRoles()
-                                        .stream()
-                                        .map(Role::getName)
-                                        .collect(Collectors.toSet());
-            return new RegisterDto(user.getUsername(), user.getPassword(), roleNames);
-        })
-        .collect(Collectors.toList());
-
-    return ResponseEntity.ok(userDtos);
-}
-
-    @GetMapping("/user/{id}")
-@PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<RegisterDto> getElementById(@PathVariable Long id) {
-    User user = userRepository.findById(id)
-                              .orElseThrow(() -> new UserNotFoundException("User not found."));
-    Set<String> roleNames = user.getRoles()
-                                .stream()
-                                .map(Role::getName)
-                                .collect(Collectors.toSet());
-    RegisterDto dto = new RegisterDto(user.getUsername(),user.getPassword(), roleNames);
-    return ResponseEntity.ok(dto);
-}
-@PutMapping("/user/{id}")
-@PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<RegisterDto> updateUser(@PathVariable Long id, @RequestBody RegisterDto userDetail) {
-    User existUser = userRepository.findById(id)
-        .orElseThrow(() -> new UserNotFoundException("User not found."));
-
-    existUser.setUsername(userDetail.getUsername());
-
-    if (userDetail.getPassword() != null && !userDetail.getPassword().isEmpty()) {
-        existUser.setPassword(passwordEncoder.encode(userDetail.getPassword()));
+    
+    @GetMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok().build();
     }
-
-    if (userDetail.getRoleNames() != null && !userDetail.getRoleNames().isEmpty()) {
-        Set<Role> roles = userDetail.getRoleNames().stream()
-            .map(roleName -> roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName)))
-            .collect(Collectors.toSet());
-        existUser.setRoles(roles);
+    
+    @PostMapping("/mfa/enable")
+    public ResponseEntity<Void> enableMfa(@RequestParam UUID userId) {
+        authService.enableMfa(userId);
+        return ResponseEntity.ok().build();
     }
-
-    // Sauvegarde de l'utilisateur avec tous les changements (username, password, roles)
-    User updatedUser = userRepository.save(existUser);
-    Set<String> roleNames = updatedUser.getRoles()
-                                       .stream()
-                                       .map(Role::getName)
-                                       .collect(Collectors.toSet());
-
-    RegisterDto dto = new RegisterDto(updatedUser.getUsername(),updatedUser.getPassword(), roleNames);
-
-    return ResponseEntity.ok(dto);
-}
-@Transactional
-@DeleteMapping("/user/delete/{id}")
-@PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-    User user = userRepository.findById(id)
-        .orElseThrow(() -> new UserNotFoundException("User not found."));
-
-    String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
-    if (user.getUsername().equals(currentUsername)) {
-        throw new IllegalArgumentException("You cannot delete your own account.");
+    
+    @PostMapping("/mfa/disable")
+    public ResponseEntity<Void> disableMfa(@RequestParam UUID userId) {
+        authService.disableMfa(userId);
+        return ResponseEntity.ok().build();
     }
-
-    user.getRoles().clear();
-    userRepository.save(user);
-
-    userRepository.delete(user);
-
-    return ResponseEntity.ok("Utilisateur supprimé avec succès.");
-}
-
-
-}
+} 
