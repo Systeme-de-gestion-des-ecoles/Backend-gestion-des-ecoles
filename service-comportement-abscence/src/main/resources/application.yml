@@ -19,4 +19,4 @@ server:
 
 student:
   service:
-    url: http://localhost:8082 
+    url: http://localhost:8081 

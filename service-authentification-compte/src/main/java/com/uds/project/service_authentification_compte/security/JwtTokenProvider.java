@@ -37,7 +37,10 @@ public class JwtTokenProvider {
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", user.getId().toString());
-        claims.put("email", user.getEmail());
+        
+        // Email supprimé de l'entité User, on le commente ici :
+        // claims.put("email", user.getEmail());
+
         claims.put("role", user.getRole().getName());
 
         return Jwts.builder()
@@ -125,4 +128,4 @@ public class JwtTokenProvider {
             throw new AuthenticationException("Invalid refresh token");
         }
     }
-} 
+}

@@ -28,7 +28,8 @@ public class RoleService {
 
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
-
+    
+    
     public List<RoleResponse> getAllRoles() {
         return roleRepository.findAll().stream()
             .map(this::mapToResponse)

@@ -74,8 +74,8 @@ class AbsenceServiceTest {
 
         studentResponse = StudentResponse.builder()
                 .id(1L)
-                .firstName("John")
-                .lastName("Doe")
+                .nom("John")
+                .prenom("Doe")
                 .build();
     }
 

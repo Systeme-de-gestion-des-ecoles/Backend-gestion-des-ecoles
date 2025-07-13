@@ -16,7 +16,7 @@ public class AbsenceController {
         this.absenceService = absenceService;
     }
 
-    @GetMapping
+    @GetMapping("/get/all")
     public ResponseEntity<List<AbsenceResponse>> getAllAbsences() {
         List<AbsenceResponse> absences = absenceService.getAllAbsences();
         return ResponseEntity.ok(absences);

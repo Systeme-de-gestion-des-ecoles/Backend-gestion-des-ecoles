@@ -40,7 +40,6 @@ public class RoleController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<RoleResponse> createRole(@RequestBody RoleRequest request) {
         return ResponseEntity.ok(roleService.createRole(request));
     }

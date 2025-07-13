@@ -40,8 +40,8 @@ class AbsenceControllerIntegrationTest {
 
         StudentResponse studentResponse = StudentResponse.builder()
                 .id(1L)
-                .firstName("John")
-                .lastName("Doe")
+                .nom("John")
+                .prenom("Doe")
                 .build();
 
         when(studentServiceClient.getStudentById(anyLong())).thenReturn(studentResponse);

@@ -3,6 +3,11 @@ spring:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:postgresql://localhost:5432/absence_db
-    username: yann
-    password: yann 
+    url: jdbc:postgresql://localhost:5432/abscence_db
+    username: postgres
+    password: nixon
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
