@@ -49,36 +49,36 @@ public class AuthService {
     private final MfaTokenProvider mfaTokenProvider;
     private final EmailService emailService;
 
-    @Transactional
-    public TokenResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new AuthenticationException("Email already registered");
-        }
-
-        Role userRole = roleRepository.findByName("ROLE_USER")
-            .orElseThrow(() -> new ResourceNotFoundException("Default role not found"));
-
-        User user = User.builder()
-            .email(request.getEmail())
-            .passwordHash(passwordEncoder.encode(request.getPassword()))
-            .firstName(request.getFirstName())
-            .lastName(request.getLastName())
-            .phone(request.getPhone())
-            .isVerified(false)
-            .isActive(false)
-            .mfaEnabled(false)
-            .role(userRole)
-            .build();
-
-        userRepository.save(user);
-        log.info("New user registered: {}", user.getEmail());
-
-        // Send verification email
-        String verificationToken = jwtTokenProvider.generateEmailVerificationToken(user);
-        emailService.sendVerificationEmail(user.getEmail(), verificationToken);
-
-        return generateTokenResponse(user, false);
+   @Transactional
+public TokenResponse register(RegisterRequest request) {
+    if (userRepository.existsByEmail(request.getEmail())) {
+        throw new AuthenticationException("Email already registered");
     }
+
+    Role userRole = roleRepository.findByName(request.getRoleName())
+        .orElseThrow(() -> new ResourceNotFoundException("Role not found: " + request.getRoleName()));
+
+    User user = User.builder()
+        .email(request.getEmail())
+        .passwordHash(passwordEncoder.encode(request.getPassword()))
+        .firstName(request.getFirstName())
+        .lastName(request.getLastName())
+        .phone(request.getPhone())
+        .isVerified(false)
+        .isActive(false)
+        .mfaEnabled(false)
+        .role(userRole)
+        .build();
+
+    userRepository.save(user);
+    log.info("New user registered: {}", user.getEmail());
+
+    String verificationToken = jwtTokenProvider.generateEmailVerificationToken(user);
+    emailService.sendVerificationEmail(user.getEmail(), verificationToken);
+
+    return generateTokenResponse(user, false);
+}
+
 
     public TokenResponse login(LoginRequest request) {
         try {
@@ -145,15 +145,24 @@ public class AuthService {
         log.info("Email verified for user: {}", user.getEmail());
     }
 
-    @Transactional
-    public void logout() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            User user = (User) authentication.getPrincipal();
+@Transactional
+public void logout() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+    if (authentication != null && authentication.isAuthenticated()) {
+        Object principal = authentication.getPrincipal();
+
+        if (principal instanceof User user) {
             sessionRepository.deleteByUserId(user.getId());
             log.info("User logged out: {}", user.getEmail());
+        } else {
+            log.warn("Tentative de logout avec un principal non reconnu : {}", principal);
         }
+    } else {
+        log.warn("Aucune authentification trouvée lors de la déconnexion");
     }
+}
+
 
     private TokenResponse generateTokenResponse(User user, boolean mfaRequired) {
         return generateTokenResponse(user, mfaRequired, null);

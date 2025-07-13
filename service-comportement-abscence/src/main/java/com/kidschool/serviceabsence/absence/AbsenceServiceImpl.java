@@ -23,7 +23,7 @@ public class AbsenceServiceImpl implements AbsenceService {
     @Override
     public AbsenceResponse createAbsence(AbsenceRequest absenceRequest) {
         Long studentId = absenceRequest.getStudentId();
-        StudentResponse studentResponse =  studentServiceClient.getStudentById(studentId);
+        StudentResponse studentResponse =  studentServiceClient.getStudentById(studentId);//verifie si level
         if (studentResponse == null) {
             throw new IllegalArgumentException("Student not found with id: " + studentId);
         }

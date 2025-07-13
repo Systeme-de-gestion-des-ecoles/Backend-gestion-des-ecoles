@@ -29,7 +29,6 @@ public class PermissionController {
     private final PermissionService permissionService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('PERMISSION_CREATE')")
     public ResponseEntity<Permission> createPermission(@Valid @RequestBody PermissionRequest request) {
         Permission permission = permissionService.createPermission(
             request.getName(),

@@ -2,8 +2,10 @@ package com.uds.project.service_parent_eleve;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
+@EnableFeignClients
 public class ServiceParentEleveApplication {
 
 	public static void main(String[] args) {
@@ -11,3 +13,4 @@ public class ServiceParentEleveApplication {
 	}
 
 }
+

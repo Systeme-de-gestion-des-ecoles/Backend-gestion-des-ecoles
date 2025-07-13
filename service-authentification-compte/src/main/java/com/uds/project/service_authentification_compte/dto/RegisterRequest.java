@@ -26,4 +26,7 @@ public class RegisterRequest {
     
     @NotBlank(message = "Last name is required")
     private String lastName;
+       
+    @NotBlank(message = "Role name is required") // ✅ nouveau champ
+    private String roleName;
 } 

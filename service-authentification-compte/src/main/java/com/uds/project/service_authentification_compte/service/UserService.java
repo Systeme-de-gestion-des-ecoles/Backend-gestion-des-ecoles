@@ -98,12 +98,11 @@ public class UserService {
             throw new IllegalStateException("Super admin already exists");
         }
 
-        // Vérifier si l'email est déjà utilisé
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
-        }
+        // Vérification supprimée car l’email est supprimé du modèle
+        // if (userRepository.existsByEmail(request.getEmail())) {
+        //     throw new IllegalArgumentException("Email already in use");
+        // }
 
-        // Créer le rôle admin s'il n'existe pas
         Role adminRole = roleRepository.findByName("ROLE_ADMIN")
             .orElseGet(() -> {
                 Role role = new Role();
@@ -112,13 +111,12 @@ public class UserService {
                 return roleRepository.save(role);
             });
 
-        // Créer le super admin
         User superAdmin = User.builder()
-            .email(request.getEmail())
+            // .email(request.getEmail()) // ⛔ Email supprimé du modèle User
             .passwordHash(passwordEncoder.encode(request.getPassword()))
             .firstName(request.getFirstName())
             .lastName(request.getLastName())
-            .phone(request.getPhone())
+            // .phone(request.getPhone()) // ⛔ Téléphone supprimé
             .isVerified(true)
             .isActive(true)
             .mfaEnabled(false)
@@ -131,16 +129,16 @@ public class UserService {
     public UserResponse mapToResponse(User user) {
         return UserResponse.builder()
             .id(user.getId())
-            .email(user.getEmail())
+            // .email(user.getEmail())        // ⛔ Supprimé du modèle
             .firstName(user.getFirstName())
             .lastName(user.getLastName())
-            .phone(user.getPhone())
+            // .phone(user.getPhone())        // ⛔ Supprimé
             .isVerified(user.isVerified())
             .isActive(user.isActive())
             .mfaEnabled(user.isMfaEnabled())
             .role(mapToRoleResponse(user.getRole()))
-            .companyId(user.getCompanyId())
-            .agencyId(user.getAgencyId())
+            // .companyId(user.getCompanyId())  // ⛔ Supprimé
+            // .agencyId(user.getAgencyId())    // ⛔ Supprimé
             .build();
     }
 
@@ -160,4 +158,4 @@ public class UserService {
                 .collect(Collectors.toSet()))
             .build();
     }
-} 
+}
